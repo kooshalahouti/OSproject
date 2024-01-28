@@ -9,6 +9,7 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct proc_info;
 
 // bio.c
 void            binit(void);
@@ -103,6 +104,7 @@ int             pipewrite(struct pipe*, char*, int);
 
 //PAGEBREAK: 16
 // proc.c
+void            proc_dump(struct proc_info *process, int *size);
 int             cpuid(void);
 void            exit(void);
 int             fork(void);
@@ -120,9 +122,6 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
-int             getyear(void);
-int             clone(void (*function)(void*), void*, void*);
-int             join(int, void**);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
@@ -158,6 +157,8 @@ int             argstr(int, char**);
 int             fetchint(uint, int*);
 int             fetchstr(uint, char**);
 void            syscall(void);
+int             clone(void(*function)(void*, void*),void*, void*, void*);
+int             join(void**);
 
 // timer.c
 void            timerinit(void);

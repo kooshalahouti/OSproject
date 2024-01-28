@@ -160,35 +160,16 @@ growproc(int n)
 {
   uint sz;
   struct proc *curproc = myproc();
-  struct proc *p;
 
   sz = curproc->sz;
   if(n > 0){
     if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
-    {
-      release(&ptable.lock);
       return -1;
-    }
   } else if(n < 0){
     if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
-      {
-      release(&ptable.lock);
       return -1;
-      }
   }
   curproc->sz = sz;
-
-  // change size of page table of all threads
-  acquire(&ptable.lock);
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if (p->pgdir != curproc->pgdir)
-      continue;
-
-    p->sz = sz;
-    switchuvm(p);
-  }
-  release(&ptable.lock);
-
   switchuvm(curproc);
   return 0;
 }
@@ -552,16 +533,46 @@ procdump(void)
   }
 }
 
-int
-getyear(void)
+void 
+proc_dump(struct proc_info *process, int *size)
 {
-  return 2023;
+    struct proc *p = ptable.proc;
+    struct proc_info *list = process;
+    (*size) = 0;
+
+    acquire(&ptable.lock);
+
+    for (int i = 0; i < NPROC; ++i, ++p) 
+    {
+        if (p->state != RUNNING && p->state != RUNNABLE)
+            continue;
+        list->memsize = p->sz;
+        list->pid = p->pid;
+        list++;
+        (*size)++;
+
+        for (int j = (*size) - 1; j > 0; --j) 
+        {
+            if (process[j].memsize >= process[j - 1].memsize)
+                break;
+
+            int sz = process[j - 1].memsize;
+            int pid = process[j - 1].pid;
+            process[j - 1].memsize = process[j].memsize;
+            process[j - 1].pid = process[j].pid;
+            process[j].memsize = sz;
+            process[j].pid = pid;
+        }
+    }
+    release(&ptable.lock);
+
+    return;
 }
 
 int
-clone(void (*function)(void* ), void* arg, void* stack)
+clone(void(*function)(void*, void* ), void* arg1, void *arg2, void* stack)
 {
-  int i, pid;
+  int i;
   struct proc *np;
   struct proc *curproc = myproc();
   np = allocproc();
@@ -578,14 +589,22 @@ np->pgdir = curproc->pgdir;
 np->parent = curproc;
 *np->tf = *curproc->tf;
 
+void * sarg1, *sarg2, *sret;
 // Stack pointer is at the bottom, bring it up; push return
 // address and arg
-*(uint*)(stack + PGSIZE - 1 * sizeof(void *)) = (uint)arg;
-*(uint*)(stack + PGSIZE - 2 * sizeof(void *)) = 0xFFFFFFFF;
+sret = stack + PGSIZE - 3 * sizeof(void *);
+*(uint*)sret = 0xFFFFFFF;
+
+sarg1 = stack + PGSIZE - 2 * sizeof(void *);
+*(uint*)sarg1 = (uint)arg1;
+
+sarg2 = stack + PGSIZE - 1 * sizeof(void *);
+*(uint*)sarg1 = (uint)arg2;
 
 // Set esp (stack pointer register) and ebp(stack base register)
 // eip (instruction pointer register)
-np->tf->esp = (uint)stack + PGSIZE - 2 * sizeof(void*);
+np->tf->esp = (uint)stack;
+np->tf->esp +=  PGSIZE - 3 * sizeof(void*);
 np->tf->ebp = np->tf->esp;
 np->tf->eip = (uint) function;
 
@@ -600,11 +619,11 @@ np->tf->eax = 0;
 for (i = 0; i < NOFILE; i++)
   if(curproc->ofile[i])
     np->ofile[i] = filedup(curproc->ofile[i]);
+// np = newproc
 np->cwd = idup(curproc->cwd);
 
 safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
-pid = np->pid;
 
 acquire(&ptable.lock);
 
@@ -612,11 +631,11 @@ np->state = RUNNABLE;
 
 release(&ptable.lock);
 
-return pid;
+return np->pid;
 }
 
 int
-join(int tid, void** stack)
+join(void** stack)
 {
   struct proc *p;
   int haveKids, pid;
@@ -627,7 +646,7 @@ join(int tid, void** stack)
     // Scan through table looking for exited children
     haveKids = 0;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if (p->parent != curproc || p->pgdir != curproc->pgdir || p->pid != tid)
+      if (p->parent != curproc || p->pgdir != p->parent->pgdir)
         continue;
       haveKids = 1;
       if (p->state == ZOMBIE){
@@ -635,13 +654,14 @@ join(int tid, void** stack)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        *stack = p->tstack;
-        p->tstack = 0;
+        
         p->pid = 0;
         p->parent = 0;
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+        *stack = p->tstack;
+        p->tstack = 0;
 
         release(&ptable.lock);
         return pid;

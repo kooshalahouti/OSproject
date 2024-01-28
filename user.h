@@ -1,5 +1,12 @@
 struct stat;
 struct rtcdate;
+struct proc_info;
+
+typedef struct __lock_t
+{
+    uint flag;
+}lock_t;
+
 
 // system calls
 int fork(void);
@@ -23,9 +30,9 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int getyear(void);
-int clone(void (*function)(void*), void*, void*);
-int join(int, void**);
+int proc_dump(struct proc_info *, int *);
+int clone(void (*function)(void*, void*), void*, void*, void*);
+int join(void**);
 
 // ulib.c
 int stat(const char*, struct stat*);
@@ -40,3 +47,8 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+int thread_create(void (*function)(void *, void*), void * arg1, void * arg2);
+int thread_join();
+int lock_init(lock_t *lock);
+void lock_acquire(lock_t *lock);
+void lock_release(lock_t *lock);

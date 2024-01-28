@@ -91,38 +91,43 @@ sys_uptime(void)
 }
 
 int
-sys_getyear(void)
+sys_proc_dump(void)
 {
-  return getyear();
+  int *size;
+  struct proc_info *process;
+  argptr(0, (void *)&process, sizeof(struct proc_info));
+  argptr(1, (void *)&size, sizeof(int));
+  proc_dump(process, size);
+
+  return 0;
 }
 
 int
 sys_clone(void)
 {
-  int function, arg, stack;
+  int function, arg1, arg2, stack;
 
   if (argint(0, &function) < 0)
     return -1;
   
-  if (argint(1, &arg) < 0)
+  if (argint(1, &arg1) < 0)
+    return -1;
+  
+  if (argint(2, &arg2) < 0)
     return -1;
 
-  if (argint(2, &stack) < 0)
+  if (argint(3, &stack) < 0)
     return -1;
 
-  return clone((void *)function, (void *)arg, (void *)stack);
+  return clone((void *)function, (void *)arg1, (void *)arg2, (void *)stack);
 }
 
 int
 sys_join(void)
 {
-  int tid, stack;
-
-  if (argint(0, &tid) < 0)
-    return -1;
-
-  if (argint(1, &stack) < 0)
-    return -1;
-
-  return join(tid, (void **)stack);
+  int tid;
+  void **stack;
+  tid = argint(0, &tid);
+  stack = (void**) tid;
+  return join(stack);
 }
