@@ -599,7 +599,7 @@ sarg1 = stack + PGSIZE - 2 * sizeof(void *);
 *(uint*)sarg1 = (uint)arg1;
 
 sarg2 = stack + PGSIZE - 1 * sizeof(void *);
-*(uint*)sarg1 = (uint)arg2;
+*(uint*)sarg2 = (uint)arg2;
 
 // Set esp (stack pointer register) and ebp(stack base register)
 // eip (instruction pointer register)
