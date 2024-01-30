@@ -5,6 +5,7 @@
 #include "mmu.h"
 #include "x86.h"
 
+#define STACK_SIZE 8192
 char*
 strcpy(char *s, const char *t)
 {
@@ -124,8 +125,7 @@ void lock_release(lock_t *lock)
 
 int thread_create(void (*function)(void *, void *), void* arg1, void* arg2)
 {
-  void* stack;
-  stack = malloc(PGSIZE);
+  void* stack[STACK_SIZE];
   return clone(function, arg1, arg2, stack);
 }
 
