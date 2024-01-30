@@ -646,7 +646,7 @@ join(void** stack)
   int haveKids, pid;
   struct proc *curproc = myproc();
 
-  acquire(&ptable.lock);
+  
   for(;;){
     // Scan through table looking for exited children
     haveKids = 0;
@@ -656,6 +656,8 @@ join(void** stack)
       haveKids = 1;
       if (p->state == ZOMBIE){
         // Found one
+        acquire(&ptable.lock);
+
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
