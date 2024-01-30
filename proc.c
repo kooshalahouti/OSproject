@@ -590,19 +590,16 @@ np->pgdir = curproc->pgdir;
 np->parent = curproc;
 *np->tf = *curproc->tf;
 
-if(np->sz > 5){
-  np->sz = np->sz % 5;
-}
 void * sarg1, *sarg2, *sret;
 // Stack pointer is at the bottom, bring it up; push return
 // address and arg
-sret = stack + PGSIZE - 2 * sizeof(void *);
+sret = stack + PGSIZE - 3 * sizeof(void *);
 *(uint*)sret = 0xFFFFFFF;
 
-sarg1 = stack + PGSIZE  - 2 * sizeof(void *);
+sarg1 = stack + PGSIZE - 2 * sizeof(void *);
 *(uint*)sarg1 = (uint)arg1;
 
-sarg2 = stack + PGSIZE  - 2 * sizeof(void *);
+sarg2 = stack + PGSIZE - 1 * sizeof(void *);
 *(uint*)sarg2 = (uint)arg2;
 
 // Set esp (stack pointer register) and ebp(stack base register)
@@ -631,7 +628,6 @@ safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
 acquire(&ptable.lock);
 
-
 np->state = RUNNABLE;
 
 release(&ptable.lock);
@@ -646,7 +642,7 @@ join(void** stack)
   int haveKids, pid;
   struct proc *curproc = myproc();
 
-  
+  acquire(&ptable.lock);
   for(;;){
     // Scan through table looking for exited children
     haveKids = 0;
@@ -656,8 +652,6 @@ join(void** stack)
       haveKids = 1;
       if (p->state == ZOMBIE){
         // Found one
-        acquire(&ptable.lock);
-
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;

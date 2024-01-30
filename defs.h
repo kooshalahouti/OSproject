@@ -158,7 +158,7 @@ int             fetchint(uint, int*);
 int             fetchstr(uint, char**);
 void            syscall(void);
 int             clone(void(*function)(void*, void*),void*, void*, void*);
-int             join(void**);
+int             join(void*);
 
 // timer.c
 void            timerinit(void);
