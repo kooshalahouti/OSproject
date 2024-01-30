@@ -596,13 +596,13 @@ if(np->sz > 5){
 void * sarg1, *sarg2, *sret;
 // Stack pointer is at the bottom, bring it up; push return
 // address and arg
-sret = stack + PGSIZE * sizeof(void *);
+sret = stack + PGSIZE - 2 * sizeof(void *);
 *(uint*)sret = 0xFFFFFFF;
 
-sarg1 = stack + PGSIZE  * sizeof(void *);
+sarg1 = stack + PGSIZE  - 2 * sizeof(void *);
 *(uint*)sarg1 = (uint)arg1;
 
-sarg2 = stack + PGSIZE  * sizeof(void *);
+sarg2 = stack + PGSIZE  - 2 * sizeof(void *);
 *(uint*)sarg2 = (uint)arg2;
 
 // Set esp (stack pointer register) and ebp(stack base register)
@@ -631,9 +631,6 @@ safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
 acquire(&ptable.lock);
 
-for (i = 0; i < NOFILE; i++)
-  if(curproc->ofile[i])
-    np->ofile[i] = ptable.lock;
 
 np->state = RUNNABLE;
 
