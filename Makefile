@@ -183,7 +183,7 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_proc_dump_test\
-	_test_threads\
+	_test\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -257,7 +257,7 @@ EXTRA=\
 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\
 	proc_dump_test.c\
-	test_threads.c\
+	test.c\
 
 dist:
 	rm -rf dist
