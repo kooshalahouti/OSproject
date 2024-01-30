@@ -42,6 +42,7 @@ struct proc {
   void *tstack;
   enum procstate state;        // Process state
   int pid;                     // Process ID
+  int runticks;                // Add the runticks field to track CPU time used in the current time quantum
   struct proc *parent;         // Parent process
   struct trapframe *tf;        // Trap frame for current syscall
   struct context *context;     // swtch() here to run process
