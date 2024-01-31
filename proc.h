@@ -39,7 +39,9 @@ struct proc {
   uint sz;                     // Size of process memory (bytes)
   pde_t* pgdir;                // Page table
   char *kstack;                // Bottom of kernel stack for this process
-  void *tstack;
+  char *tstack;                // thread stack virtual address
+  int tid;                     // id of thread               
+  int tstackalloc;             // if greater than 0 stack is allocated to kernel
   enum procstate state;        // Process state
   int pid;                     // Process ID
   struct proc *parent;         // Parent process
